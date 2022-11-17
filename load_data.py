@@ -23,5 +23,5 @@ def getA(data):
 
     return A
 
-training_data = load_data(filename+'.training')
-test_data = load_data(filename+'.test')
+# training_data = load_data(filename+'.training')
+# test_data = load_data(filename+'.test')

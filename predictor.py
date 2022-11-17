@@ -11,21 +11,27 @@ def getBaseLinePrediction(data):
     y = data[:,2]-avg
     A = getA(data)
     x = linalg.lsqr(A,y)[0]
-    return avg + A*x
+    return [
+        avg + A*x, 
+        x,
+        avg
+    ]
 
+def testModel(data,x,avg):
+    A = getA(data)
+    return avg+A*x
 
 def getRMSE(data,prediction):
     result = 0
-    for i in range(len(data)):
+    minLength = min(len(prediction),len(data))
+    for i in range(minLength):
         r = data[i]
-        if (r < 1):
-            r = 1
-        elif (r > 5):
-            r = 5
-        if (i < len(prediction)):
-            result += (r-prediction[i])**2
-        else:
-            result += r**2
-    return np.around(np.sqrt(result/len(data)),3)
+        p = prediction[i]
+        if (p < 1):
+            p = 1
+        elif (p > 5):
+            p = 5 
+        result += (r-p)**2
+    return np.around(np.sqrt(result/minLength),3)
 def getAbsError(data,prediction):
     return np.abs(data-prediction)
