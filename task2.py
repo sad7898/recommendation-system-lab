@@ -9,15 +9,15 @@ import random
 from load_data import load_data,getA
 
 TPATH = "/courses/TSKS33/ht2022/data/student_files"
-training_data = load_data("./verification.training")
-test_data = load_data("./verification.test")
+trainingData= load_data("{0}/sirko805.training".format(TPATH))
+testData= load_data("{0}/sirko805.test".format(TPATH))
 
-model,x,avg = predictor.getBaseLinePrediction(training_data)
-prediction_test = predictor.testModel(test_data,x,avg)
-def getCSR(data,prediction):
+pTraining,model,avg = predictor.getBaseLinePrediction(trainingData)
+pTest = predictor.testModel(testData,model,avg)
+def getDataMatrix(data,prediction):
     # get row x col = movie x user csr matrix
-    row = data[:,1]
-    col = data[:,0]
+    row = data[:,1] # row index (movie id)
+    col = data[:,0] # col index (user id)
     d = data[:,2]-prediction
     return np.array(scipy.sparse.csr_matrix((d,(row,col))).toarray())
     
@@ -38,12 +38,12 @@ def calculateCosineSimilarity(csr,minCommonUser):
     return np.array(scipy.sparse.csr_matrix((resultData,(resultRow,resultCol)),shape=(row,row)).toarray())
 
 
-def getImprovedPrediction(data,csr,csrSim,L):
+def getImprovedPrediction(data,csr,similarities,L):
     result = []
     for d in data:
         movie1 = d[1]
         user = d[0]
-        simArr = csrSim[movie1]
+        simArr = similarities[movie1]
         prediction = d[3]
         sim = sorted([(simArr[j],j) for j in range(len(simArr))],key=lambda k: k[0],reverse=True)[0:L]
         sumResidualCosSim = 0
@@ -58,13 +58,17 @@ def getImprovedPrediction(data,csr,csrSim,L):
             correction = sumResidualCosSim/sumAbs
         result.append(prediction+correction)
     return result
-dataArr = np.insert(training_data,len(training_data[0]),model,axis=1)
-testDataArr = np.insert(test_data,len(test_data[0]),prediction_test,axis=1)
-csr = getCSR(training_data,model)
-csr_test = getCSR(test_data,prediction_test)
+
+    
+csr = getDataMatrix(trainingData,pTraining)
+csr_test = getDataMatrix(testData,pTest)
 similarity = calculateCosineSimilarity(csr,50)
-improvedPrediction = getImprovedPrediction(testDataArr,csr_test,similarity,100)
-print("RMSE of test data: {0}".format(predictor.getRMSE(test_data[:,2],improvedPrediction)))
+ratingsTest = np.insert(testData,len(testData[0]),pTest,axis=1)
+improvedPredictionTest = getImprovedPrediction(ratingsTest,csr_test,similarity,100)
+
+print("RMSE of prediction test: {0}".format(predictor.getRMSE(testData[:,2],pTest)))
+    
+print("RMSE of improved prediction test: {0}".format(predictor.getRMSE(testData[:,2],improvedPredictionTest)))
 
 
 
